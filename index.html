@@ -5,7 +5,7 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js">
     </script>
   </head>
-  <body>
+  <body style="margin: 0; overflow: hidden;">
     <a-scene
       mindar-image="imageTargetSrc: targets/artwork.mind;"
       color-space="sRGB"
@@ -13,14 +13,19 @@
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false">
 
+      <a-assets>
+        <img id="artwork" src="assets/artwork_target.png" />
+      </a-assets>
+
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
         <a-plane
-          src="assets/overlay.jpg"
+          src="#artwork"
           position="0 0 0"
           height="1"
-          width="1">
+          width="1"
+          material="transparent: true; alphaTest: 0.1">
         </a-plane>
       </a-entity>
 
