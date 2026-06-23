@@ -3,13 +3,12 @@
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { 
-        background: black; 
-        width: 100vw; 
-        height: 100vh; 
+      body {
+        background: black;
+        width: 100vw;
+        height: 100vh;
         overflow: hidden;
       }
       #container {
@@ -73,6 +72,9 @@
       const status = document.getElementById('status');
       const startScreen = document.getElementById('start-screen');
 
+      // Use bundled THREE from MindAR
+      const THREE = window.MINDAR.IMAGE.THREE;
+
       function showStatus(msg) {
         status.style.display = 'block';
         status.textContent = msg;
@@ -85,44 +87,46 @@
         // Step 1: explicitly request camera from user gesture
         let stream;
         try {
-          stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'environment' } 
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' }
           });
         } catch(e) {
-          showStatus('Camera access denied. Please allow camera in Settings > Safari > Camera and try again.');
+          showStatus('Camera access denied. Please go to Settings > Safari > Camera and allow access, then try again.');
           btn.disabled = false;
           return;
         }
 
-        // Step 2: stop the test stream — MindAR will open its own
+        // Step 2: stop test stream — MindAR opens its own
         stream.getTracks().forEach(t => t.stop());
-        showStatus('Starting AR experience...');
+        showStatus('Loading AR experience...');
 
-        // Step 3: initialize MindAR with Three.js
+        // Step 3: initialize MindAR with correct global
         try {
-          const mindarThree = new MindARThree({
+          const mindarThree = new window.MINDAR.IMAGE.MindARThree({
             container: document.getElementById('container'),
             imageTargetSrc: 'targets/artwork.mind',
           });
 
           const { renderer, scene, camera } = mindarThree;
 
-          // Load overlay image as a Three.js texture
+          // Load overlay texture using bundled THREE
           const texture = new THREE.TextureLoader().load('assets/artwork_target.png');
           const geometry = new THREE.PlaneGeometry(1, 1);
-          const material = new THREE.MeshBasicMaterial({ 
-            map: texture, 
+          const material = new THREE.MeshBasicMaterial({
+            map: texture,
             transparent: true,
             alphaTest: 0.1
           });
           const plane = new THREE.Mesh(geometry, material);
 
-          // Attach to anchor (target index 0)
+          // Attach to anchor
           const anchor = mindarThree.addAnchor(0);
           anchor.group.add(plane);
 
-          // Hide start screen and start AR
+          // Hide start screen
           startScreen.style.display = 'none';
+
+          // Start AR
           await mindarThree.start();
 
           // Render loop
