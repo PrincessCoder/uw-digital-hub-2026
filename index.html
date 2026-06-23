@@ -55,14 +55,26 @@
       </a-entity>
 
     </a-scene>
+<script>
+  document.getElementById('start-button').addEventListener('click', function() {
+    document.getElementById('start-screen').style.display = 'none';
+    const scene = document.querySelector('a-scene');
+    
+    const startAR = () => {
+      const mindar = scene.components['mindar-image'];
+      if (mindar && mindar.startAR) {
+        mindar.startAR();
+      } else {
+        setTimeout(startAR, 500);
+      }
+    };
 
-    <script>
-      document.getElementById('start-button').addEventListener('click', function() {
-        document.getElementById('start-screen').style.display = 'none';
-        const scene = document.querySelector('a-scene');
-        scene.components['mindar-image'].startAR();
-      });
-    </script>
-
+    if (scene.hasLoaded) {
+      startAR();
+    } else {
+      scene.addEventListener('loaded', startAR);
+    }
+  });
+</script>
   </body>
 </html>
