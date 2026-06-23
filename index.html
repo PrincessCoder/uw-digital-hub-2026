@@ -2,6 +2,8 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <style>
       body { margin: 0; overflow: hidden; }
       #start-screen {
@@ -13,7 +15,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        z-index: 999;
+        z-index: 9999;
       }
       #start-button {
         padding: 20px 40px;
@@ -40,56 +42,61 @@
       <button id="start-button">Tap to Begin</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js">
-    </script>
+    <a-scene
+      mindar-image="imageTargetSrc: targets/artwork.mind; autoStart: false;"
+      color-space="sRGB"
+      renderer="colorManagement: true, physicallyCorrectLights"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false">
+
+      <a-assets>
+        <img id="artwork" src="assets/artwork_target.png" />
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-plane
+          src="#artwork"
+          position="0 0 0"
+          height="0.5"
+          width="0.5"
+          material="transparent: true; alphaTest: 0.1">
+        </a-plane>
+      </a-entity>
+
+    </a-scene>
 
     <script>
       document.getElementById('start-button').addEventListener('click', async function() {
-        document.getElementById('start-screen').style.display = 'none';
-
-        // Request camera permission explicitly first
+        // Request camera permission explicitly from user gesture
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ video: true });
           stream.getTracks().forEach(track => track.stop());
         } catch(e) {
-          alert('Camera access is required for this experience. Please allow camera access and try again.');
-          document.getElementById('start-screen').style.display = 'flex';
+          alert('Camera access is required. Please allow camera access and try again.');
           return;
         }
 
-        // Now build and inject the A-Frame scene dynamically
-        const scene = document.createElement('a-scene');
-        scene.setAttribute('mindar-image', 'imageTargetSrc: targets/artwork.mind;');
-        scene.setAttribute('color-space', 'sRGB');
-        scene.setAttribute('renderer', 'colorManagement: true, physicallyCorrectLights');
-        scene.setAttribute('vr-mode-ui', 'enabled: false');
-        scene.setAttribute('device-orientation-permission-ui', 'enabled: false');
+        // Hide start screen
+        document.getElementById('start-screen').style.display = 'none';
 
-        const assets = document.createElement('a-assets');
-        const img = document.createElement('img');
-        img.id = 'artwork';
-        img.src = 'assets/artwork_target.png';
-        assets.appendChild(img);
+        // Start MindAR after permission granted
+        const scene = document.querySelector('a-scene');
+        const startWhenReady = () => {
+          const mindar = scene.components['mindar-image'];
+          if (mindar && mindar.startAR) {
+            mindar.startAR();
+          } else {
+            setTimeout(startWhenReady, 300);
+          }
+        };
 
-        const camera = document.createElement('a-camera');
-        camera.setAttribute('position', '0 0 0');
-        camera.setAttribute('look-controls', 'enabled: false');
-
-        const entity = document.createElement('a-entity');
-        entity.setAttribute('mindar-image-target', 'targetIndex: 0');
-
-        const plane = document.createElement('a-plane');
-        plane.setAttribute('src', '#artwork');
-        plane.setAttribute('position', '0 0 0');
-        plane.setAttribute('height', '0.5');
-        plane.setAttribute('width', '0.5');
-        plane.setAttribute('material', 'transparent: true; alphaTest: 0.1');
-
-        entity.appendChild(plane);
-        scene.appendChild(assets);
-        scene.appendChild(camera);
-        scene.appendChild(entity);
-        document.body.appendChild(scene);
+        if (scene.hasLoaded) {
+          startWhenReady();
+        } else {
+          scene.addEventListener('loaded', startWhenReady);
+        }
       });
     </script>
 
